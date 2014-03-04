@@ -33,6 +33,7 @@ import org.hibernate.type.LongType
 import org.hibernate.type.TimeType
 import org.hibernate.type.TimestampType
 import org.hibernate.type.Type
+import org.springframework.util.StringUtils
 
 /**
  * @author <a href='mailto:burt@burtbeckwith.com'>Burt Beckwith</a>
@@ -201,6 +202,13 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 			delimiter = newline
 			fixed.append delimiter
 			fixed.append 'import org.apache.commons.lang.builder.HashCodeBuilder'
+			fixed.append delimiter
+		}
+
+		if(revengConfig.addRestAnnotation) {
+			delimiter = newline
+			fixed.append delimiter
+			fixed.append 'import grails.rest.*'
 			fixed.append delimiter
 		}
 
@@ -527,7 +535,14 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 	}
 
 	String renderClassStart() {
-		"class ${getDeclarationName()}${renderImplements()}{"
+		def c = new StringBuilder()
+		if(revengConfig.addRestAnnotation) {
+			String path = getDeclarationName()
+			path = path[0].toLowerCase() + path.substring(1)
+			c.append "@Resource(uri='/$path', formats=['json', 'xml'])"
+			c.append newline
+		}
+		c.append "class ${getDeclarationName()}${renderImplements()}{"
 	}
 
 	String renderImplements() {
