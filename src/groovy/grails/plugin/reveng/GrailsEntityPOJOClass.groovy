@@ -33,7 +33,6 @@ import org.hibernate.type.LongType
 import org.hibernate.type.TimeType
 import org.hibernate.type.TimestampType
 import org.hibernate.type.Type
-import org.springframework.util.StringUtils
 
 /**
  * @author <a href='mailto:burt@burtbeckwith.com'>Burt Beckwith</a>
