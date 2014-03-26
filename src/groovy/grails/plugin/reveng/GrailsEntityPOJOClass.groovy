@@ -33,6 +33,7 @@ import org.hibernate.type.LongType
 import org.hibernate.type.TimeType
 import org.hibernate.type.TimestampType
 import org.hibernate.type.Type
+import java.beans.Introspector
 
 /**
  * @author <a href='mailto:burt@burtbeckwith.com'>Burt Beckwith</a>
@@ -304,6 +305,10 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 
 		def constraints = new StringBuilder()
 
+		def belongs = new TreeSet()
+		def hasMany = new TreeSet()
+		findBelongsToAndHasMany belongs, hasMany
+
 		getAllPropertiesIterator().each { Property property ->
 			if (!getMetaAttribAsBool(property, 'gen-property', true)) {
 				return
@@ -330,9 +335,9 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 				}
 
 				clazz.table.uniqueKeyIterator.each { UniqueKey key ->
-					if (key.columnSpan == 1 || key.name == clazz.table.primaryKey.name) return
+					if (key.columnSpan == 1 || key.name == clazz.table.primaryKey?.name) return
 					if (key.columns[-1] == column) {
-						def otherNames = key.columns[0..-2].collect { "\"$it.name\"" }
+						def otherNames = key.columns[0..-2].collect { "\"" + columnNameAsProperty(it.name, belongs) + "\"" }
 						values.unique = '[' + otherNames.reverse().join(', ') + ']'
 					}
 				}
@@ -351,6 +356,17 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 		}
 
 		constraints.length() ? "\tstatic constraints = {$newline$constraints\t}" : ''
+	}
+
+	protected String columnNameAsProperty(String name, Set belongsTo) {
+		String relationName = name?.replace('Id', '')
+		for(r in belongsTo) {
+			if(r == relationName) {
+				return Introspector.decapitalize(r)
+			}
+		}
+
+		Introspector.decapitalize(name)
 	}
 
 	protected boolean isDateType(Type type) {
@@ -542,7 +558,7 @@ class GrailsEntityPOJOClass extends EntityPOJOClass {
 		def c = new StringBuilder()
 		if(revengConfig.addRestAnnotation) {
 			String path = getDeclarationName()
-			path = path[0].toLowerCase() + path.substring(1)
+			path = Introspector.decapitalize(path)
 			c.append "@Resource(uri='/$path', formats=['json', 'xml'])"
 			c.append newline
 		}
